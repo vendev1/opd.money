@@ -6,8 +6,8 @@
 
 <div align="center">
 <img src="https://img.shields.io/badge/O-OpenSource-red" alt="OforOpenSource" title="O">
-<img src="https://img.shields.io/badge/P-Participatory-yellowgreen" alt="PforParticipatory" title="P">
-<img src="https://img.shields.io/badge/D-Decentraliseation-brightgreen" alt="DforDecentraliseation" title="D">
+<img src="https://img.shields.io/badge/P-Participated-yellowgreen" alt="PforParticipated" title="P">
+<img src="https://img.shields.io/badge/D-Decentralised-brightgreen" alt="DforDecentralised" title="D">
 </div>
 
 <br />
