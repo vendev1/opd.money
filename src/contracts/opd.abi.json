@@ -1,0 +1,180 @@
+{
+	"ABI version": 2,
+	"version": "2.2",
+	"header": ["pubkey", "time", "expire"],
+	"functions": [
+		{
+			"name": "constructor",
+			"inputs": [
+				{"name":"owner","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "addAdmin",
+			"inputs": [
+				{"name":"_address","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "removeAdmin",
+			"inputs": [
+				{"name":"_address","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "setTime",
+			"inputs": [
+				{"name":"min","type":"uint256"},
+				{"name":"max","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "addToken",
+			"inputs": [
+				{"name":"name","type":"string"},
+				{"name":"tokenAddress","type":"address"},
+				{"name":"decimals","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "setTokenActive",
+			"inputs": [
+				{"name":"id","type":"uint256"},
+				{"name":"active","type":"bool"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "removeToken",
+			"inputs": [
+				{"name":"id","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "addLoan",
+			"inputs": [
+				{"name":"loanTokenId","type":"uint256"},
+				{"name":"loanAmount","type":"uint256"},
+				{"name":"reward","type":"uint256"},
+				{"name":"depositTokenId","type":"uint256"},
+				{"name":"depositAmount","type":"uint256"},
+				{"name":"_time","type":"uint256"},
+				{"name":"validity","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "cancelLoan",
+			"inputs": [
+				{"name":"id","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "makeDeal",
+			"inputs": [
+				{"name":"id","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "closeDeal",
+			"inputs": [
+				{"name":"id","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "isAdmin",
+			"inputs": [
+				{"name":"_address","type":"address"}
+			],
+			"outputs": [
+				{"name":"value0","type":"bool"}
+			]
+		},
+		{
+			"name": "getTime",
+			"inputs": [
+			],
+			"outputs": [
+				{"components":[{"name":"min","type":"uint256"},{"name":"max","type":"uint256"}],"name":"value0","type":"tuple"}
+			]
+		},
+		{
+			"name": "getToken",
+			"inputs": [
+				{"name":"id","type":"uint256"}
+			],
+			"outputs": [
+				{"components":[{"name":"name","type":"string"},{"name":"tokenAddress","type":"address"},{"name":"tokenType","type":"uint256"},{"name":"tokenId","type":"uint256"},{"name":"decimals","type":"uint256"},{"name":"active","type":"bool"},{"name":"lockedAmount","type":"uint256"}],"name":"value0","type":"tuple"}
+			]
+		},
+		{
+			"name": "admins",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"admins","type":"map(address,bool)"}
+			]
+		},
+		{
+			"name": "tokens",
+			"inputs": [
+			],
+			"outputs": [
+				{"components":[{"name":"name","type":"string"},{"name":"tokenAddress","type":"address"},{"name":"tokenType","type":"uint256"},{"name":"tokenId","type":"uint256"},{"name":"decimals","type":"uint256"},{"name":"active","type":"bool"},{"name":"lockedAmount","type":"uint256"}],"name":"tokens","type":"map(uint256,tuple)"}
+			]
+		},
+		{
+			"name": "loans",
+			"inputs": [
+			],
+			"outputs": [
+				{"components":[{"name":"timestamp","type":"uint256"},{"name":"borrower","type":"address"},{"name":"loanTokenId","type":"uint256"},{"name":"loanAmount","type":"uint256"},{"name":"reward","type":"uint256"},{"name":"depositTokenId","type":"uint256"},{"name":"depositAmount","type":"uint256"},{"name":"time","type":"uint256"},{"name":"validity","type":"uint256"}],"name":"loans","type":"map(uint256,tuple)"}
+			]
+		},
+		{
+			"name": "deals",
+			"inputs": [
+			],
+			"outputs": [
+				{"components":[{"name":"timestamp","type":"uint256"},{"name":"exp","type":"uint256"},{"name":"borrower","type":"address"},{"name":"creditor","type":"address"},{"name":"loanTokenId","type":"uint256"},{"name":"loanAmount","type":"uint256"},{"name":"reward","type":"uint256"},{"name":"depositTokenId","type":"uint256"},{"name":"depositAmount","type":"uint256"}],"name":"deals","type":"map(uint256,tuple)"}
+			]
+		}
+	],
+	"data": [
+	],
+	"events": [
+	],
+	"fields": [
+		{"name":"_pubkey","type":"uint256"},
+		{"name":"_timestamp","type":"uint64"},
+		{"name":"_constructorFlag","type":"bool"},
+		{"name":"ntoken","type":"uint256"},
+		{"name":"nloan","type":"uint256"},
+		{"name":"ndeal","type":"uint256"},
+		{"components":[{"name":"min","type":"uint256"},{"name":"max","type":"uint256"}],"name":"time","type":"tuple"},
+		{"name":"admins","type":"map(address,bool)"},
+		{"components":[{"name":"name","type":"string"},{"name":"tokenAddress","type":"address"},{"name":"tokenType","type":"uint256"},{"name":"tokenId","type":"uint256"},{"name":"decimals","type":"uint256"},{"name":"active","type":"bool"},{"name":"lockedAmount","type":"uint256"}],"name":"tokens","type":"map(uint256,tuple)"},
+		{"components":[{"name":"timestamp","type":"uint256"},{"name":"borrower","type":"address"},{"name":"loanTokenId","type":"uint256"},{"name":"loanAmount","type":"uint256"},{"name":"reward","type":"uint256"},{"name":"depositTokenId","type":"uint256"},{"name":"depositAmount","type":"uint256"},{"name":"time","type":"uint256"},{"name":"validity","type":"uint256"}],"name":"loans","type":"map(uint256,tuple)"},
+		{"components":[{"name":"timestamp","type":"uint256"},{"name":"exp","type":"uint256"},{"name":"borrower","type":"address"},{"name":"creditor","type":"address"},{"name":"loanTokenId","type":"uint256"},{"name":"loanAmount","type":"uint256"},{"name":"reward","type":"uint256"},{"name":"depositTokenId","type":"uint256"},{"name":"depositAmount","type":"uint256"}],"name":"deals","type":"map(uint256,tuple)"}
+	]
+}

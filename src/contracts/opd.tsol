@@ -1,0 +1,339 @@
+pragma ever-solidity >= 0.61.2;
+pragma AbiHeader expire;
+pragma AbiHeader pubkey;
+
+
+/**
+ * @dev The contract related errors.
+ */
+library Errors {
+    uint16 constant TEST_MODE = 99;
+    uint16 constant ACCESS_DENIED = 101;
+    uint16 constant ILLEGAL_ARGUMENT_SENDER = 102;
+    uint16 constant ILLEGAL_ARGUMENT_ID = 103;
+    uint16 constant ILLEGAL_ARGUMENT_MAX = 202;
+    uint16 constant ILLEGAL_ARGUMENT_LOAN_TOKEN = 301;
+    uint16 constant ILLEGAL_ARGUMENT_LOAN_AMOUNT = 302;
+    uint16 constant ILLEGAL_ARGUMENT_DEPOSIT_TOKEN = 303;
+    uint16 constant ILLEGAL_ARGUMENT_TIME = 304;
+    uint16 constant ILLEGAL_ARGUMENT_VALIDITY = 305;
+    uint16 constant ILLEGAL_ARGUMENT_NOW = 306;
+}
+
+
+/**
+ * @title opd.money contract
+ *
+ * @dev The contract is a storage for p2p credit deals and provides service functionality to make such deals.
+ */
+contract opd {
+
+    /**
+     * @dev Time bounds structure.
+     */
+    struct TTime {
+        uint min;
+        uint max;
+    }
+
+    /**
+     * @dev Token structure.
+     */
+    struct TToken {
+        string name;
+        address tokenAddress;
+        uint tokenType;
+        uint tokenId;
+        uint decimals;
+        bool active;
+        uint lockedAmount;
+    }
+
+    /**
+     * @dev Loan request structure.
+     */
+    struct TLoan {
+        uint timestamp;
+        address borrower;
+        uint loanTokenId;
+        uint loanAmount;
+        uint reward;
+        uint depositTokenId;
+        uint depositAmount;
+        uint time;
+        uint validity;
+    }
+
+    /**
+     * @dev Credit deal structure.
+     */
+    struct TDeal {
+        uint timestamp;
+        uint exp;
+        address borrower;
+        address creditor;
+        uint loanTokenId;
+        uint loanAmount;
+        uint reward;
+        uint depositTokenId;
+        uint depositAmount;
+    }
+
+    uint private ntoken;
+    uint private nloan;
+    uint private ndeal;
+    TTime private time;
+
+    mapping(address => bool) public admins;
+    mapping(uint => TToken) public tokens;
+    mapping(uint => TLoan) public loans;
+    mapping(uint => TDeal) public deals;
+
+
+    /**
+     * @dev Create and initialize the contract.
+     *
+     * @param owner the address of the contract owner
+     */
+    constructor(address owner) public {
+        tvm.accept();
+        time.min = 7 * 86400;
+        time.max = 180 * 86400;
+        ntoken = 0;
+        admins[owner] = true;
+    }
+
+    /**
+     * @dev Modifier throws an exception if called by non-admin account.
+     */
+    modifier adminsOnly {
+        require(admins[msg.sender], Errors.ACCESS_DENIED);
+        _;
+    }
+
+    /**
+     * @dev Add an admin address to the list of admin addresses.
+     *
+     * @param _address new admin address
+     */
+    function addAdmin(address _address) public adminsOnly {
+        admins[_address] = true;
+    }
+
+    /**
+     * @dev Remove an admin address from the list of admin addresses.
+     *
+     * @param _address admin address
+     */
+    function removeAdmin(address _address) public adminsOnly {
+        delete admins[_address];
+    }
+
+    /**
+     * @dev Set time bounds for credit deals.
+     *
+     * @param min minimum deal duration in seconds
+     * @param max maximum deal duration in seconds
+     */
+    function setTime(uint min, uint max) public adminsOnly {
+        require(min <= max, 201);
+        time.min = min;
+        time.max = max;
+    }
+
+    /**
+     * @dev Add supported token.
+     *
+     * @param name token name
+     * @param tokenAddress token address
+     * @param decimals decimals
+     */
+    function addToken(string name, address tokenAddress, uint decimals) public adminsOnly {
+        ntoken += 1;
+        tokens[ntoken] = TToken({
+            name: name,
+            tokenAddress: tokenAddress,
+            tokenType: 1,       //tokenType: _tokenType,
+            tokenId: 0,         //tokenId: _tokenId,
+            decimals: decimals,
+            active: true,
+            lockedAmount: 0
+        });
+    }
+
+    /**
+     * @dev Set active status for supported token.
+     *
+     * @param id token ID
+     * @param active active status (a token can not be a part of a loan request if active=false)
+     */
+    function setTokenActive(uint id, bool active) public adminsOnly {
+        tvm.accept();
+        require(tokens[id].tokenAddress != address(0), Errors.ILLEGAL_ARGUMENT_ID);
+        tokens[id].active = active;
+    }
+
+    /**
+     * @dev Remove supported token.
+     *
+     * @param id token ID
+     */
+    function removeToken(uint id) public adminsOnly {
+        require(tokens[id].tokenAddress != address(0), Errors.ILLEGAL_ARGUMENT_ID);
+        delete tokens[id];
+    }
+
+    /**
+     * @dev Create a new loan request.
+     *
+     * @param loanTokenId loan token ID
+     * @param loanAmount requested amount of tokens
+     * @param reward amount of tokens as creditor's reward
+     * @param depositTokenId deposit token ID
+     * @param depositAmount deposit amount of tokens
+     * @param _time credit deal duration in seconds
+     * @param validity loan request expire date or 0
+     */
+    function addLoan(uint loanTokenId, uint loanAmount, uint reward, uint depositTokenId, uint depositAmount,
+                        uint _time, uint validity) public {
+        require(tokens[loanTokenId].active, Errors.ILLEGAL_ARGUMENT_LOAN_TOKEN);
+        require(loanAmount > 0, Errors.ILLEGAL_ARGUMENT_LOAN_AMOUNT);
+        require(loanTokenId != depositTokenId, Errors.ILLEGAL_ARGUMENT_DEPOSIT_TOKEN);
+        require(tokens[depositTokenId].active, Errors.ILLEGAL_ARGUMENT_DEPOSIT_TOKEN);
+        require(_time >= time.min && _time <= time.max, Errors.ILLEGAL_ARGUMENT_TIME);
+        //require(validity == 0 || validity > block.timestamp, Errors.ILLEGAL_ARGUMENT_VALIDITY);
+        require(validity == 0 || validity > now, Errors.ILLEGAL_ARGUMENT_VALIDITY);
+        transferTokens(msg.sender, address(this), depositTokenId, depositAmount);
+        tokens[depositTokenId].lockedAmount += depositAmount;
+        nloan += 1;
+        loans[nloan] = TLoan({
+            //timestamp: block.timestamp,
+            timestamp: now,
+            borrower: msg.sender,
+            loanTokenId: loanTokenId,
+            loanAmount: loanAmount,
+            reward: reward,
+            depositTokenId: depositTokenId,
+            depositAmount: depositAmount,
+            time: _time,
+            validity: validity
+        });
+    }
+
+    /**
+     * @dev Cancel sender's loan request, the deposit of the loan is returned to the sender.
+     *
+     * @param id loan request ID
+     */
+    function cancelLoan(uint id) public {
+        require(loans[id].timestamp > 0, Errors.ILLEGAL_ARGUMENT_ID);
+        require(loans[id].borrower == msg.sender, Errors.ACCESS_DENIED);
+        refundDeposit(loans[id].borrower, loans[id].depositTokenId, loans[id].depositAmount);
+        delete loans[id];
+    }
+
+    /**
+     * @dev Make a credit deal.
+     *
+     * @param id loan request ID
+     */
+    function makeDeal(uint id) public {
+        require(loans[id].timestamp > 0, Errors.ILLEGAL_ARGUMENT_ID);
+        require(loans[id].borrower != msg.sender, Errors.ILLEGAL_ARGUMENT_SENDER);
+        //require(loans[id].validity == 0 || loans[id].validity > block.timestamp, Errors.ILLEGAL_ARGUMENT_NOW);
+        require(loans[id].validity == 0 || loans[id].validity > now, Errors.ILLEGAL_ARGUMENT_NOW);
+        transferTokens(msg.sender, loans[id].borrower, loans[id].loanTokenId, loans[id].loanAmount);
+        ndeal += 1;
+        deals[ndeal] = TDeal({
+            //timestamp: block.timestamp,
+            timestamp: now,
+            //exp: block.timestamp + loans[id].time,
+            exp: now + loans[id].time,
+            borrower: loans[id].borrower,
+            creditor: msg.sender,
+            loanTokenId: loans[id].loanTokenId,
+            loanAmount: loans[id].loanAmount,
+            reward: loans[id].reward,
+            depositTokenId: loans[id].depositTokenId,
+            depositAmount: loans[id].depositAmount
+        });
+        delete loans[id];
+    }
+
+    /**
+     * @dev Close a deal by borrower or creditor.
+     *
+     * @param id credit deal ID
+     */
+    function closeDeal(uint id) public {
+        require(deals[id].timestamp > 0, Errors.ILLEGAL_ARGUMENT_ID);
+        require(deals[id].borrower == msg.sender || deals[id].creditor == msg.sender, Errors.ACCESS_DENIED);
+        address depositReceiver;
+        if (msg.sender == deals[id].borrower) {
+            transferTokens(deals[id].borrower, deals[id].creditor, deals[id].loanTokenId, deals[id].loanAmount + deals[id].reward);
+            depositReceiver = deals[id].borrower;
+        } else {
+            //require(deals[id].exp < block.timestamp, Errors.ACCESS_DENIED);
+            require(deals[id].exp < now, Errors.ACCESS_DENIED);
+            depositReceiver = deals[id].creditor;
+        }
+        refundDeposit(depositReceiver, deals[id].depositTokenId, deals[id].depositAmount);
+        delete deals[id];
+    }
+
+    /**
+     * @dev Help function to send deposit.
+     */
+    function refundDeposit(address receiver, uint tokenId, uint amount) internal {
+        require(receiver != address(0), Errors.TEST_MODE);     //TODO: remove this
+        if (amount > 0) {
+            // token transfer
+            tokens[tokenId].lockedAmount -= amount;
+        }
+    }
+
+    /**
+     * @dev Help function to transfer tokens.
+     */
+    function transferTokens(address sender, address receiver, uint tokenId, uint amount) internal {
+        require(sender != address(0), Errors.TEST_MODE);       //TODO: remove this
+        require(receiver != address(0), Errors.TEST_MODE);     //TODO: remove this
+        tokens[tokenId].lockedAmount -= 0;                     //TODO: remove this
+        if (amount > 0) {
+            // token transfer
+        }
+    }
+
+    /**
+     * @dev Check admin address.
+     *
+     * @param _address address to check
+     *
+     * @return true if the address is admin address
+     */
+    function isAdmin(address _address) external view returns (bool) {
+        return admins[_address];
+    }
+
+    /**
+     * @dev Get credit deal time bounds.
+     *
+     * @return time bounds
+     */
+    function getTime() external view returns (TTime) {
+        return time;
+    }
+
+
+    /**
+     * @dev Return a supported token.
+     *
+     * @param id token ID
+     *
+     * @return token data
+     */
+    function getToken(uint id) external view returns (TToken) {
+        return tokens[id];
+    }
+
+}
